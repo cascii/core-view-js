@@ -1,4 +1,4 @@
-version = "0.2.0"
+version = "0.2.1"
 
 [settings]
 mode = "branch"
@@ -17,3 +17,9 @@ exclude = []
 feature = "minor"
 fix = "patch"
 release = "major"
+
+[release]
+enabled = true
+on_bump = []
+match = ""
+skip = ""
