@@ -29,6 +29,9 @@
     "canvas"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "devDependencies": {
     "tsup": "^8.0.0",
     "typescript": "^5.5.0",

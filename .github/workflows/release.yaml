@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   release:
@@ -46,6 +47,23 @@ jobs:
 
 
           echo "should_release=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.should_release == 'true'
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+
+      - name: Install and build
+        if: steps.check.outputs.should_release == 'true'
+        run: npm ci
+
+      - name: Publish to GitHub Packages
+        if: steps.check.outputs.should_release == 'true'
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
         if: steps.check.outputs.should_release == 'true'
