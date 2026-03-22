@@ -17,6 +17,7 @@
     "dist"
   ],
   "scripts": {
+    "prepare": "tsup",
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -28,6 +29,10 @@
     "canvas"
   ],
   "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
   "devDependencies": {
     "tsup": "^8.0.0",
     "typescript": "^5.5.0",
