@@ -1,6 +1,6 @@
 export type {RGB} from './data';
-export {FrameFile, CFrameData, Frame} from './data';
-export {ParseError, parseCframe, parseCframeText} from './parser';
+export {FrameFile, CFrameData, PackedCFrameBlob, Frame} from './data';
+export {ParseError, parseCframe, parseCframeText, parsePackedCframes} from './parser';
 export {AnimationController, AnimationState, LoopMode} from './animation';
 export {parseColor, FrameColors} from './color';
 export {FontSizing, charPosition} from './sizing';
