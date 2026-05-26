@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {FrameFile, CFrameData, Frame} from '../src/data';
+import {FrameFile, CFrameData, PackedCFrameBlob, Frame} from '../src/data';
 
 describe('FrameFile.extractIndex', () => {
   it('parses frame_ prefix', () => {
@@ -38,6 +38,38 @@ describe('CFrameData', () => {
 
   it('pixelCount', () => {
     expect(cframe.pixelCount()).toBe(4);
+  });
+
+  it('toText reconstructs frame text', () => {
+    expect(cframe.toText()).toBe('AB\nCD\n');
+  });
+});
+
+describe('PackedCFrameBlob', () => {
+  const blob = new PackedCFrameBlob(
+    2,
+    2,
+    1,
+    new Uint8Array([
+      0x41, 255, 0, 0,
+      0x42, 0, 255, 0,
+      0x43, 0, 0, 255,
+      0x44, 255, 255, 255,
+    ]),
+  );
+
+  it('reports frame metadata', () => {
+    expect(blob.len()).toBe(2);
+    expect(blob.isEmpty()).toBe(false);
+    expect(blob.frameByteLen()).toBe(8);
+  });
+
+  it('decodes an individual frame', () => {
+    const frame = blob.decodeFrame(1);
+    expect(frame?.width).toBe(2);
+    expect(frame?.height).toBe(1);
+    expect(Array.from(frame?.chars ?? [])).toEqual([0x43, 0x44]);
+    expect(Array.from(frame?.rgb ?? [])).toEqual([0, 0, 255, 255, 255, 255]);
   });
 });
 

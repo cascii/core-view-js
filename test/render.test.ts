@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {CFrameData} from '../src/data';
-import {RenderConfig, renderCframe} from '../src/render';
+import {FrameCanvasCache, RenderConfig, currentRenderKey, renderCframe} from '../src/render';
 
 describe('renderCframe', () => {
   it('batches same-color chars', () => {
@@ -41,5 +41,24 @@ describe('renderCframe', () => {
     const result = renderCframe(cframe, new RenderConfig(10));
     expect(result.width).toBe(480); // 80 * 10 * 0.6
     expect(Math.abs(result.height - 266.4)).toBeLessThan(0.01);
+  });
+
+  it('includes font family in render config', () => {
+    const config = new RenderConfig(12);
+    config.fontFamily = 'Menlo, monospace';
+    expect(config.fontString()).toBe('12.00px Menlo, monospace');
+  });
+});
+
+describe('FrameCanvasCache', () => {
+  it('invalidates on render key changes', () => {
+    const config = new RenderConfig(10);
+    const cache = new FrameCanvasCache(2);
+
+    expect(cache.invalidateForRenderKey(currentRenderKey(config))).toBe(true);
+    expect(cache.invalidateForRenderKey(currentRenderKey(config))).toBe(false);
+
+    config.backgroundColor = [0, 0, 0];
+    expect(cache.invalidateForRenderKey(currentRenderKey(config))).toBe(true);
   });
 });

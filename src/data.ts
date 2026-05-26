@@ -50,6 +50,71 @@ export class CFrameData {
   pixelCount(): number {
     return this.width * this.height;
   }
+
+  toText(): string {
+    let text = '';
+    for (let row = 0; row < this.height; row++) {
+      const start = row * this.width;
+      const end = start + this.width;
+      for (let i = start; i < end; i++) {
+        text += String.fromCharCode(this.chars[i]);
+      }
+      text += '\n';
+    }
+    return text;
+  }
+}
+
+export class PackedCFrameBlob {
+  constructor(
+    public readonly frameCount: number,
+    public readonly width: number,
+    public readonly height: number,
+    public readonly frames: Uint8Array,
+  ) {}
+
+  len(): number {
+    return this.frameCount;
+  }
+
+  isEmpty(): boolean {
+    return this.frameCount === 0;
+  }
+
+  frameByteLen(): number {
+    return this.width * this.height * 4;
+  }
+
+  frameBytes(index: number): Uint8Array | null {
+    if (index < 0 || index >= this.frameCount) {
+      return null;
+    }
+
+    const frameLen = this.frameByteLen();
+    const start = index * frameLen;
+    return this.frames.subarray(start, start + frameLen);
+  }
+
+  decodeFrame(index: number): CFrameData | null {
+    const bytes = this.frameBytes(index);
+    if (!bytes) {
+      return null;
+    }
+
+    const pixelCount = this.width * this.height;
+    const chars = new Uint8Array(pixelCount);
+    const rgb = new Uint8Array(pixelCount * 3);
+
+    for (let i = 0; i < pixelCount; i++) {
+      const offset = i * 4;
+      chars[i] = bytes[offset];
+      rgb[i * 3] = bytes[offset + 1];
+      rgb[i * 3 + 1] = bytes[offset + 2];
+      rgb[i * 3 + 2] = bytes[offset + 3];
+    }
+
+    return new CFrameData(this.width, this.height, chars, rgb);
+  }
 }
 
 export class Frame {
@@ -74,7 +139,7 @@ export class Frame {
     const lines = this.content.split('\n');
     // Remove trailing empty line from split if content ends with \n
     const rows = lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
-    const cols = lines.reduce((max, l) => Math.max(max, l.length), 0);
+    const cols = lines.reduce((max, l) => Math.max(max, Array.from(l).length), 0);
     return [cols, rows];
   }
 }

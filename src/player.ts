@@ -1,9 +1,10 @@
 import {AnimationController} from './animation';
 import {CFrameData, Frame, FrameFile} from './data';
+import {ParseError, parsePackedCframes} from './parser';
 import {FontSizing} from './sizing';
 import {
   RenderConfig, FrameCanvasCache, renderToOffscreenCanvas,
-  drawCachedCanvas, drawFrameFromCache, renderTextToCanvas,
+  currentRenderKey, drawCachedCanvas, drawFrameFromCache, renderTextToCanvas,
 } from './render';
 import {FrameDataProvider, loadTextFrames, loadColorFrames, yieldToEventLoop} from './loader';
 
@@ -28,22 +29,30 @@ export class FramePlayer {
     this.cache = new FrameCanvasCache();
   }
 
+  private replaceFrames(frames: Frame[], frameFiles: FrameFile[]): void {
+    this.frames = frames;
+    this._frameFiles = frameFiles;
+    this._colorReady = false;
+    this.controller.reset();
+    this.controller.setFrameCount(frames.length);
+    this.cache.resize(frames.length);
+    this.cache.invalidateAll();
+  }
+
   // ── Loading ───────────────────────────────────────────────────────
 
   async load(provider: FrameDataProvider, directory: string): Promise<void> {
     const [frames, frameFiles] = await loadTextFrames(provider, directory);
-    this.controller.setFrameCount(frames.length);
-    this.cache.resize(frames.length);
-    this.frames = frames;
-    this._frameFiles = frameFiles;
+    this.replaceFrames(frames, frameFiles);
   }
 
   async loadFromUrls(urls: string[]): Promise<void> {
     const frames = await loadFramesFromUrls(urls);
-    this.controller.setFrameCount(frames.length);
-    this.cache.resize(frames.length);
-    this.frames = frames;
-    this._frameFiles = [];
+    this.replaceFrames(frames, []);
+  }
+
+  setTextFrames(contents: string[]): void {
+    this.replaceFrames(contents.map(content => Frame.textOnly(content)), []);
   }
 
   get frameFiles(): FrameFile[] {
@@ -54,6 +63,40 @@ export class FramePlayer {
     if (index < this.frames.length) {
       this.frames[index].cframe = cframe;
     }
+  }
+
+  loadPackedColors(data: Uint8Array): void {
+    const blob = parsePackedCframes(data);
+    const frameCount = blob.len();
+
+    if (this.frames.length === 0) {
+      const frames: Frame[] = [];
+      for (let index = 0; index < frameCount; index++) {
+        const cframe = blob.decodeFrame(index);
+        if (!cframe) {
+          throw new Error(`Packed blob frame ${index} is missing`);
+        }
+        frames.push(Frame.withColor(cframe.toText(), cframe));
+      }
+      this.frames = frames;
+      this._frameFiles = [];
+      this.controller.reset();
+      this.controller.setFrameCount(frames.length);
+      this.cache.resize(frames.length);
+    } else if (this.frames.length !== frameCount) {
+      throw ParseError.frameCountMismatch(this.frames.length, frameCount);
+    } else {
+      for (let index = 0; index < frameCount; index++) {
+        const cframe = blob.decodeFrame(index);
+        if (!cframe) {
+          throw new Error(`Packed blob frame ${index} is missing`);
+        }
+        this.frames[index].cframe = cframe;
+      }
+    }
+
+    this._colorReady = true;
+    this.cache.invalidateAll();
   }
 
   get colorReady(): boolean { return this._colorReady; }
@@ -115,13 +158,18 @@ export class FramePlayer {
     const fontSize = this.sizing.calculateFontSize(cols, rows, width, height);
     this.config.fontSize = fontSize;
     this.config.sizing = this.sizing;
-    const key = Math.floor(fontSize * 100);
-    this.cache.invalidateForFontSizeKey(key);
+    this.cache.invalidateForRenderKey(currentRenderKey(this.config));
   }
 
   get fontSize(): number { return this.config.fontSize; }
 
   get renderConfig(): RenderConfig { return this.config; }
+
+  setRenderConfig(config: RenderConfig): void {
+    this.sizing = config.sizing;
+    this.config = config;
+    this.cache.invalidateAll();
+  }
 
   fontSizeCss(): string {
     const dims = this.dimensions();
@@ -146,6 +194,7 @@ export class FramePlayer {
 
   renderFrame(index: number, canvas: HTMLCanvasElement): boolean {
     if (!this._colorReady) return false;
+    this.cache.invalidateForRenderKey(currentRenderKey(this.config));
 
     if (drawFrameFromCache(canvas, this.cache, index)) return true;
 
@@ -159,6 +208,7 @@ export class FramePlayer {
   }
 
   preCacheFrame(index: number): boolean {
+    this.cache.invalidateForRenderKey(currentRenderKey(this.config));
     if (this.cache.has(index)) return false;
     const cframe = this.frames[index]?.cframe;
     if (!cframe) return false;
