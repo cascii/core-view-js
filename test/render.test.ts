@@ -1,6 +1,13 @@
 import {describe, it, expect} from 'vitest';
 import {CFrameData} from '../src/data';
-import {FrameCanvasCache, RenderConfig, currentRenderKey, renderCframe} from '../src/render';
+import {
+  FrameCanvasCache,
+  RenderConfig,
+  currentRenderKey,
+  renderCframe,
+  renderCframeWithMetrics,
+  renderToCanvas,
+} from '../src/render';
 
 describe('renderCframe', () => {
   it('batches same-color chars', () => {
@@ -12,6 +19,7 @@ describe('renderCframe', () => {
 
     const result = renderCframe(cframe, new RenderConfig(10));
     expect(result.batches.length).toBe(2);
+    expect(result.backgroundBatches).toEqual([]);
     expect(result.batches[0].text).toBe('AB');
     expect(result.batches[0].color).toEqual([255, 0, 0]);
     expect(result.batches[1].text).toBe('C');
@@ -48,6 +56,60 @@ describe('renderCframe', () => {
     config.fontFamily = 'Menlo, monospace';
     expect(config.fontString()).toBe('12.00px Menlo, monospace');
   });
+
+  it('batches same-color cell backgrounds and keeps black visible', () => {
+    const cframe = CFrameData.withBackground(
+      3, 1,
+      new Uint8Array([0x20, 0x41, 0x20]),
+      new Uint8Array([0, 0, 0, 255, 255, 255, 0, 0, 0]),
+      new Uint8Array([0, 0, 0, 0, 0, 0, 12, 12, 12]),
+    );
+    const result = renderCframeWithMetrics(cframe, 6, 11);
+    expect(result.backgroundBatches).toHaveLength(2);
+    expect(result.backgroundBatches[0]).toMatchObject({
+      x: 0,
+      y: 0,
+      width: 12,
+      height: 11,
+      color: [0, 0, 0],
+    });
+    expect(result.backgroundBatches[1].color).toEqual([12, 12, 12]);
+    expect(result.batches).toHaveLength(1);
+  });
+
+  it('draws cell backgrounds before stroked foreground text', () => {
+    const calls: string[] = [];
+    const context = {
+      font: '',
+      textBaseline: '',
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 0,
+      measureText: () => ({width: 6}),
+      setTransform: () => undefined,
+      clearRect: () => calls.push('clear'),
+      fillRect: () => calls.push('background'),
+      strokeText: () => calls.push('stroke'),
+      fillText: () => calls.push('text'),
+    } as unknown as CanvasRenderingContext2D;
+    const canvas = {
+      width: 0,
+      height: 0,
+      style: {width: '', height: ''},
+      getContext: () => context,
+    } as unknown as HTMLCanvasElement;
+    const cframe = CFrameData.withBackground(
+      1, 1,
+      new Uint8Array([0x41]),
+      new Uint8Array([255, 255, 255]),
+      new Uint8Array([0, 0, 0]),
+    );
+    const config = new RenderConfig(10);
+    config.textStrokeWidth = 0.5;
+
+    renderToCanvas(cframe, canvas, config);
+    expect(calls).toEqual(['clear', 'background', 'stroke', 'text']);
+  });
 });
 
 describe('FrameCanvasCache', () => {
@@ -59,6 +121,9 @@ describe('FrameCanvasCache', () => {
     expect(cache.invalidateForRenderKey(currentRenderKey(config))).toBe(false);
 
     config.backgroundColor = [0, 0, 0];
+    expect(cache.invalidateForRenderKey(currentRenderKey(config))).toBe(true);
+
+    config.textStrokeWidth = 0.5;
     expect(cache.invalidateForRenderKey(currentRenderKey(config))).toBe(true);
   });
 });

@@ -1,15 +1,24 @@
 export type {RGB} from './data';
 export {FrameFile, CFrameData, PackedCFrameBlob, Frame} from './data';
-export {ParseError, parseCframe, parseCframeText, parsePackedCframes} from './parser';
+export {
+  ParseError,
+  CFRAME_EXT_FLAG_HAS_BG,
+  encodeCframe,
+  parseCframe,
+  parseCframeText,
+  parsePackedCframes,
+  splitCframeExtension,
+} from './parser';
 export {AnimationController, AnimationState, LoopMode} from './animation';
 export {parseColor, FrameColors} from './color';
 export {FontSizing, charPosition} from './sizing';
 export {
-  RenderConfig, renderCframe, textBatchColorString,
+  RenderConfig, renderCframe, renderCframeWithMetrics,
+  textBatchColorString, cellRectBatchColorString,
   renderToCanvas, renderToOffscreenCanvas, drawCachedCanvas,
   drawFrameFromCache, renderTextToCanvas, FrameCanvasCache,
 } from './render';
-export type {TextBatch, RenderResult} from './render';
+export type {TextBatch, CellRectBatch, RenderResult} from './render';
 export {parseDetailsToml, detailsFrameColors} from './details';
 export type {ProjectDetails} from './details';
 export {

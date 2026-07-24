@@ -29,6 +29,14 @@ describe('FontSizing', () => {
     expect(w).toBe(80 * 10 * 0.6);
     expect(h).toBe(24 * 10 * 1.11);
   });
+
+  it('calculates font size from measured rendered dimensions', () => {
+    const sizing = new FontSizing();
+    const fs = sizing.calculateFontSizeFromMeasuredSize(480, 266.4, 10, 800, 600);
+    expect(fs).toBeGreaterThan(15);
+    expect(fs).toBeLessThan(17);
+    expect(sizing.calculateFontSizeFromMeasuredSize(0, 100, 10, 800, 600)).toBe(1);
+  });
 });
 
 describe('charPosition', () => {

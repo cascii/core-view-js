@@ -35,7 +35,7 @@ export class AnimationController {
   get fps(): number { return this._fps; }
 
   intervalMs(): number {
-    return Math.max(1, Math.floor(1000 / this._fps));
+    return Math.max(1, Math.round(1000 / this._fps));
   }
 
   setLoopMode(mode: LoopMode): void {

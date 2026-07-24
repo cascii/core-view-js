@@ -21,30 +21,67 @@ export class CFrameData {
     public readonly height: number,
     public readonly chars: Uint8Array,
     public readonly rgb: Uint8Array,
+    public readonly bgRgb: Uint8Array | null = null,
   ) {}
 
+  static withBackground(
+    width: number,
+    height: number,
+    chars: Uint8Array,
+    rgb: Uint8Array,
+    bgRgb: Uint8Array,
+  ): CFrameData {
+    return new CFrameData(width, height, chars, rgb, bgRgb);
+  }
+
+  hasBackground(): boolean {
+    return this.bgRgb !== null && this.bgRgb.length === this.chars.length * 3;
+  }
+
   charAt(row: number, col: number): number | null {
-    if (row < this.height && col < this.width) {
-      return this.chars[row * this.width + col];
-    }
-    return null;
+    if (!this.isInBounds(row, col)) return null;
+    return this.chars[row * this.width + col] ?? null;
   }
 
   rgbAt(row: number, col: number): RGB | null {
-    if (row < this.height && col < this.width) {
-      const idx = (row * this.width + col) * 3;
-      return [this.rgb[idx], this.rgb[idx + 1], this.rgb[idx + 2]];
-    }
-    return null;
+    if (!this.isInBounds(row, col)) return null;
+    const idx = (row * this.width + col) * 3;
+    if (idx + 2 >= this.rgb.length) return null;
+    return [this.rgb[idx], this.rgb[idx + 1], this.rgb[idx + 2]];
+  }
+
+  bgRgbAt(row: number, col: number): RGB | null {
+    if (!this.bgRgb || !this.isInBounds(row, col)) return null;
+    const idx = (row * this.width + col) * 3;
+    if (idx + 2 >= this.bgRgb.length) return null;
+    return [this.bgRgb[idx], this.bgRgb[idx + 1], this.bgRgb[idx + 2]];
+  }
+
+  hasVisibleForeground(row: number, col: number): boolean {
+    if (!this.isInBounds(row, col)) return false;
+    const idx = row * this.width + col;
+    const ch = this.chars[idx];
+    if (ch === undefined || ch === 0x20) return false;
+    const rgbIdx = idx * 3;
+    if (rgbIdx + 2 >= this.rgb.length) return false;
+    const r = this.rgb[rgbIdx];
+    const g = this.rgb[rgbIdx + 1];
+    const b = this.rgb[rgbIdx + 2];
+    return !(r < 5 && g < 5 && b < 5);
+  }
+
+  hasVisibleBackground(row: number, col: number): boolean {
+    if (!this.bgRgb || !this.isInBounds(row, col)) return false;
+    const idx = (row * this.width + col) * 3;
+    return idx + 2 < this.bgRgb.length;
+  }
+
+  isEffectivelyEmpty(row: number, col: number): boolean {
+    return !this.hasVisibleForeground(row, col) && !this.hasVisibleBackground(row, col);
   }
 
   shouldSkip(row: number, col: number): boolean {
-    const idx = row * this.width + col;
-    const ch = this.chars[idx];
-    const r = this.rgb[idx * 3];
-    const g = this.rgb[idx * 3 + 1];
-    const b = this.rgb[idx * 3 + 2];
-    return ch === 0x20 || (r < 5 && g < 5 && b < 5);
+    return this.isEffectivelyEmpty(row, col);
   }
 
   pixelCount(): number {
@@ -63,6 +100,15 @@ export class CFrameData {
     }
     return text;
   }
+
+  private isInBounds(row: number, col: number): boolean {
+    return Number.isInteger(row)
+      && Number.isInteger(col)
+      && row >= 0
+      && col >= 0
+      && row < this.height
+      && col < this.width;
+  }
 }
 
 export class PackedCFrameBlob {
@@ -71,7 +117,18 @@ export class PackedCFrameBlob {
     public readonly width: number,
     public readonly height: number,
     public readonly frames: Uint8Array,
+    public readonly bgFrames: Uint8Array | null = null,
   ) {}
+
+  static withBackground(
+    frameCount: number,
+    width: number,
+    height: number,
+    frames: Uint8Array,
+    bgFrames: Uint8Array,
+  ): PackedCFrameBlob {
+    return new PackedCFrameBlob(frameCount, width, height, frames, bgFrames);
+  }
 
   len(): number {
     return this.frameCount;
@@ -85,14 +142,35 @@ export class PackedCFrameBlob {
     return this.width * this.height * 4;
   }
 
+  backgroundFrameByteLen(): number {
+    return this.width * this.height * 3;
+  }
+
+  hasBackground(): boolean {
+    return this.bgFrames !== null
+      && this.bgFrames.length === this.len() * this.backgroundFrameByteLen();
+  }
+
   frameBytes(index: number): Uint8Array | null {
-    if (index < 0 || index >= this.frameCount) {
+    if (!Number.isInteger(index) || index < 0 || index >= this.frameCount) {
       return null;
     }
 
     const frameLen = this.frameByteLen();
     const start = index * frameLen;
     return this.frames.subarray(start, start + frameLen);
+  }
+
+  backgroundFrameBytes(index: number): Uint8Array | null {
+    if (!this.bgFrames || !Number.isInteger(index) || index < 0 || index >= this.frameCount) {
+      return null;
+    }
+
+    const frameLen = this.backgroundFrameByteLen();
+    const start = index * frameLen;
+    const end = start + frameLen;
+    if (end > this.bgFrames.length) return null;
+    return this.bgFrames.subarray(start, end);
   }
 
   decodeFrame(index: number): CFrameData | null {
@@ -113,7 +191,10 @@ export class PackedCFrameBlob {
       rgb[i * 3 + 2] = bytes[offset + 3];
     }
 
-    return new CFrameData(this.width, this.height, chars, rgb);
+    const bgRgb = this.backgroundFrameBytes(index);
+    return bgRgb
+      ? CFrameData.withBackground(this.width, this.height, chars, rgb, bgRgb.slice())
+      : new CFrameData(this.width, this.height, chars, rgb);
   }
 }
 

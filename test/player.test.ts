@@ -14,6 +14,16 @@ function packedBlobBytes(): Uint8Array {
   ]);
 }
 
+function packedBackgroundBlobBytes(): Uint8Array {
+  return new Uint8Array([
+    2, 0, 0, 0,
+    1, 0, 0, 0,
+    1, 0, 0, 0,
+    0x41, 255, 0, 0, 1, 10, 20, 30,
+    0x42, 0, 255, 0, 1, 40, 50, 60,
+  ]);
+}
+
 describe('FramePlayer', () => {
   it('sets in-memory text frames', () => {
     const player = new FramePlayer(30);
@@ -56,5 +66,15 @@ describe('FramePlayer', () => {
     player.setTextFrames(['AB\n']);
 
     expect(() => player.loadPackedColors(packedBlobBytes())).toThrow(ParseError);
+  });
+
+  it('loads packed backgrounds into every frame', () => {
+    const player = new FramePlayer(30);
+    player.loadPackedColors(packedBackgroundBlobBytes());
+
+    expect(player.getText(0)).toBe('A\n');
+    expect(player.getText(1)).toBe('B\n');
+    expect(player.getFrames()[0].cframe?.bgRgbAt(0, 0)).toEqual([10, 20, 30]);
+    expect(player.getFrames()[1].cframe?.bgRgbAt(0, 0)).toEqual([40, 50, 60]);
   });
 });

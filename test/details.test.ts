@@ -9,6 +9,7 @@ frames = 300
 fps = 30
 color = "red"
 background_color = "#1a1a2e"
+fit_cell_backgrounds = true
 `;
     const details = parseDetailsToml(toml);
     expect(details.version).toBe('1.0');
@@ -16,6 +17,7 @@ background_color = "#1a1a2e"
     expect(details.fps).toBe(30);
     expect(details.color).toBe('red');
     expect(details.background_color).toBe('#1a1a2e');
+    expect(details.fit_cell_backgrounds).toBe(true);
   });
 });
 

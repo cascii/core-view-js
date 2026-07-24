@@ -91,7 +91,7 @@ describe('AnimationController', () => {
   });
 
   it('intervalMs', () => {
-    expect(new AnimationController(24).intervalMs()).toBe(41);
-    expect(new AnimationController(60).intervalMs()).toBe(16);
+    expect(new AnimationController(24).intervalMs()).toBe(42);
+    expect(new AnimationController(60).intervalMs()).toBe(17);
   });
 });
