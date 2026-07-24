@@ -1,6 +1,6 @@
 {
   "name": "@cascii/core-view",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Core frame display and animation library for ASCII art viewers",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -29,6 +29,10 @@
     "canvas"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cascii/core-view-js.git"
+  },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
     "access": "public"
