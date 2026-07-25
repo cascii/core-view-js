@@ -11,6 +11,7 @@ export interface ProjectDetails {
   audio?: boolean;
   background_color?: string;
   color?: string;
+  fit_cell_backgrounds?: boolean;
 }
 
 export function parseDetailsToml(s: string): ProjectDetails {
@@ -42,6 +43,7 @@ export function parseDetailsToml(s: string): ProjectDetails {
       case 'audio':            details.audio = value === 'true'; break;
       case 'background_color': details.background_color = value; break;
       case 'color':            details.color = value; break;
+      case 'fit_cell_backgrounds': details.fit_cell_backgrounds = value === 'true'; break;
     }
   }
 

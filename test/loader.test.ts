@@ -1,5 +1,11 @@
 import {describe, it, expect} from 'vitest';
-import {LoadingProgress, FrameLoaderState, LoadingPhase} from '../src/loader';
+import {
+  LoadingProgress,
+  FrameLoaderState,
+  LoadingPhase,
+  loadTextFrames,
+} from '../src/loader';
+import type {FrameDataProvider} from '../src/loader';
 import {FrameFile, CFrameData} from '../src/data';
 
 describe('LoadingProgress', () => {
@@ -61,5 +67,35 @@ describe('FrameLoaderState', () => {
     expect(state.hasAnyColor()).toBe(true);
     expect(state.frames[0].hasColor()).toBe(true);
     expect(state.phase).toBe(LoadingPhase.Complete);
+  });
+});
+
+describe('loadTextFrames', () => {
+  it('loads text concurrently in ordered batches', async () => {
+    let active = 0;
+    let maxActive = 0;
+    const files = Array.from(
+      {length: 10},
+      (_, index) => new FrameFile(`frame_${index}.txt`, `frame_${index}.txt`, index),
+    );
+    const provider: FrameDataProvider = {
+      async getFrameFiles() {
+        return files;
+      },
+      async readFrameText(path) {
+        active++;
+        maxActive = Math.max(maxActive, active);
+        await Promise.resolve();
+        active--;
+        return path;
+      },
+      async readCframeBytes() {
+        return null;
+      },
+    };
+
+    const [frames] = await loadTextFrames(provider, 'frames');
+    expect(maxActive).toBe(8);
+    expect(frames.map(frame => frame.content)).toEqual(files.map(file => file.path));
   });
 });

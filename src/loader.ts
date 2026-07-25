@@ -139,6 +139,8 @@ export interface FrameDataProvider {
   readCframeBytes(txtPath: string): Promise<Uint8Array | null>;
 }
 
+const TEXT_LOAD_CONCURRENCY = 8;
+
 export async function loadTextFrames(provider: FrameDataProvider, directory: string): Promise<[Frame[], FrameFile[]]> {
   const frameFiles = await provider.getFrameFiles(directory);
   if (frameFiles.length === 0) {
@@ -146,9 +148,10 @@ export async function loadTextFrames(provider: FrameDataProvider, directory: str
   }
 
   const frames: Frame[] = [];
-  for (const frameFile of frameFiles) {
-    const content = await provider.readFrameText(frameFile.path);
-    frames.push(Frame.textOnly(content));
+  for (let start = 0; start < frameFiles.length; start += TEXT_LOAD_CONCURRENCY) {
+    const batch = frameFiles.slice(start, start + TEXT_LOAD_CONCURRENCY);
+    const contents = await Promise.all(batch.map(frameFile => provider.readFrameText(frameFile.path)));
+    frames.push(...contents.map(content => Frame.textOnly(content)));
   }
 
   return [frames, frameFiles];
@@ -162,8 +165,6 @@ export async function loadColorFrames(
 ): Promise<void> {
   const total = frameFiles.length;
   for (let i = 0; i < total; i++) {
-    await yieldFn();
-
     const bytes = await provider.readCframeBytes(frameFiles[i].path);
     let cframe: CFrameData | null = null;
     if (bytes) {
@@ -180,5 +181,17 @@ export async function loadColorFrames(
 }
 
 export function yieldToEventLoop(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 0));
+  if (typeof MessageChannel === 'undefined') {
+    return Promise.resolve();
+  }
+
+  return new Promise(resolve => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      channel.port1.close();
+      channel.port2.close();
+      resolve();
+    };
+    channel.port2.postMessage(null);
+  });
 }

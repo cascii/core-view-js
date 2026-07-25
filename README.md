@@ -37,7 +37,8 @@ setInterval(() => {
 ### Data types (`data.ts`)
 
 - **`Frame`** — A single frame with text content and optional color data (`.cframe`)
-- **`CFrameData`** — Parsed `.cframe` binary: width x height grid of characters with per-pixel RGB
+- **`CFrameData`** — Parsed `.cframe` binary with characters, foreground RGB, and optional per-cell background RGB
+- **`PackedCFrameBlob`** — Packed multi-frame foreground/background data with lazy frame decoding
 - **`FrameFile`** — File metadata with path, name, and extracted frame index
 
 ### Animation (`animation.ts`)
@@ -47,8 +48,11 @@ setInterval(() => {
 
 ### Parser (`parser.ts`)
 
-- **`parseCframe(data: Uint8Array)`** — Parse `.cframe` binary format (8-byte header + width*height*4 body)
+- **`parseCframe(data: Uint8Array)`** — Parse foreground-only or background-extended `.cframe` data
 - **`parseCframeText(data: Uint8Array)`** — Extract plain text from `.cframe` data
+- **`parsePackedCframes(data: Uint8Array)`** — Parse foreground-only, flagged-background, and legacy-background packed animations
+- **`encodeCframe(frame)`** — Validate and encode a frame, including its optional background extension
+- **`splitCframeExtension(data)`** — Split the legacy frame body from a trailing extension for byte-level editing
 
 ### Color (`color.ts`)
 
@@ -58,14 +62,19 @@ setInterval(() => {
 ### Sizing (`sizing.ts`)
 
 - **`FontSizing`** — Calculate optimal font size to fit N columns x M rows into a container, with configurable char-width and line-height ratios
+- **`calculateFontSizeFromMeasuredSize(...)`** — Scale from host-measured glyph/block dimensions
 - **`charPosition(col, row, fontSize)`** — Pixel position of a character in the grid
 
 ### Rendering (`render.ts`)
 
-- **`renderCframe(cframe, config)`** — Batch consecutive same-color characters into `TextBatch` objects for efficient drawing
-- **`renderToCanvas` / `renderToOffscreenCanvas`** — Draw colored frames to HTML canvas
+- **`renderCframe(cframe, config)`** — Batch foreground glyphs and per-cell backgrounds into optimized draw commands
+- **`renderCframeWithMetrics(cframe, charWidth, lineHeight)`** — Generate commands using host-measured glyph metrics
+- **`renderToCanvas` / `renderToOffscreenCanvas`** — Draw foreground colors, cell backgrounds, and optional text strokes to HTML canvas
 - **`renderTextToCanvas`** — Draw plain text frames to canvas
-- **`FrameCanvasCache`** — Cache pre-rendered canvases with font-size-aware invalidation
+- **`FrameCanvasCache`** — Cache pre-rendered canvases with full render-configuration invalidation
+
+`RenderConfig.textStrokeWidth` enables stroked/bolder glyph rendering. `RenderConfig.backgroundColor`
+sets the whole-canvas background; it is composited before any per-cell backgrounds stored in the frame.
 
 ### Loader (`loader.ts`)
 
@@ -77,6 +86,9 @@ Two-phase loading for progressive display:
 - **`FrameDataProvider`** — Interface for platform-agnostic I/O (`getFrameFiles`, `readFrameText`, `readCframeBytes`)
 - **`LoadingProgress`** / **`FrameLoaderState`** — Track loading state and progress
 
+Text reads are issued in ordered concurrent batches. Background color loading and pre-caching yield
+between frames so browser input and animation remain responsive.
+
 ### Player (`player.ts`)
 
 - **`FramePlayer`** — High-level orchestrator combining animation, sizing, rendering, and caching
@@ -85,11 +97,28 @@ Two-phase loading for progressive display:
   - `fitToContainer(width, height)` — Auto-size font to fit container
   - `tickAndRender(canvas)` — Combined tick + canvas render
   - `preCacheAll()` — Pre-render all colored frames to offscreen canvases
+  - `refreshRenderKey()` — Refresh cached DPR/config state after direct config changes or monitor moves
 
 ### Details (`details.ts`)
 
 - **`parseDetailsToml(s: string)`** — Parse project metadata (fps, colors, dimensions) from TOML
 - **`detailsFrameColors(details)`** — Extract foreground/background colors from project details
+- Supports the `fit_cell_backgrounds` project flag
+
+## Binary background extensions
+
+The legacy single-frame body remains unchanged:
+
+```text
+width:u32 + height:u32 + width*height*(char:u8, r:u8, g:u8, b:u8)
+```
+
+A background-aware frame appends a one-byte extension flag followed by
+`width*height*3` bytes of background RGB. The parser also accepts the earlier
+flag-less background payload.
+
+Packed animations use the same foreground body and optional background extension
+for every frame. Foreground-only packed blobs remain fully backward compatible.
 
 ## Project structure
 

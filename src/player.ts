@@ -21,12 +21,14 @@ export class FramePlayer {
   private sizing: FontSizing;
   private _colorReady = false;
   private cache: FrameCanvasCache;
+  private renderKey = '';
 
   constructor(fps: number) {
     this.controller = new AnimationController(fps);
     this.config = new RenderConfig();
     this.sizing = new FontSizing();
     this.cache = new FrameCanvasCache();
+    this.refreshRenderKey();
   }
 
   private replaceFrames(frames: Frame[], frameFiles: FrameFile[]): void {
@@ -37,6 +39,7 @@ export class FramePlayer {
     this.controller.setFrameCount(frames.length);
     this.cache.resize(frames.length);
     this.cache.invalidateAll();
+    this.refreshRenderKey();
   }
 
   // ── Loading ───────────────────────────────────────────────────────
@@ -83,6 +86,7 @@ export class FramePlayer {
       this.controller.reset();
       this.controller.setFrameCount(frames.length);
       this.cache.resize(frames.length);
+      this.refreshRenderKey();
     } else if (this.frames.length !== frameCount) {
       throw ParseError.frameCountMismatch(this.frames.length, frameCount);
     } else {
@@ -97,6 +101,7 @@ export class FramePlayer {
 
     this._colorReady = true;
     this.cache.invalidateAll();
+    this.refreshRenderKey();
   }
 
   get colorReady(): boolean { return this._colorReady; }
@@ -158,7 +163,7 @@ export class FramePlayer {
     const fontSize = this.sizing.calculateFontSize(cols, rows, width, height);
     this.config.fontSize = fontSize;
     this.config.sizing = this.sizing;
-    this.cache.invalidateForRenderKey(currentRenderKey(this.config));
+    this.refreshRenderKey();
   }
 
   get fontSize(): number { return this.config.fontSize; }
@@ -168,7 +173,7 @@ export class FramePlayer {
   setRenderConfig(config: RenderConfig): void {
     this.sizing = config.sizing;
     this.config = config;
-    this.cache.invalidateAll();
+    this.refreshRenderKey();
   }
 
   fontSizeCss(): string {
@@ -186,6 +191,11 @@ export class FramePlayer {
   getController(): AnimationController { return this.controller; }
   getCache(): FrameCanvasCache { return this.cache; }
 
+  refreshRenderKey(): void {
+    this.renderKey = currentRenderKey(this.config);
+    this.cache.invalidateForRenderKey(this.renderKey);
+  }
+
   // ── Canvas rendering ──────────────────────────────────────────────
 
   renderCurrent(canvas: HTMLCanvasElement): boolean {
@@ -194,7 +204,7 @@ export class FramePlayer {
 
   renderFrame(index: number, canvas: HTMLCanvasElement): boolean {
     if (!this._colorReady) return false;
-    this.cache.invalidateForRenderKey(currentRenderKey(this.config));
+    this.cache.invalidateForRenderKey(this.renderKey);
 
     if (drawFrameFromCache(canvas, this.cache, index)) return true;
 
@@ -208,7 +218,7 @@ export class FramePlayer {
   }
 
   preCacheFrame(index: number): boolean {
-    this.cache.invalidateForRenderKey(currentRenderKey(this.config));
+    this.cache.invalidateForRenderKey(this.renderKey);
     if (this.cache.has(index)) return false;
     const cframe = this.frames[index]?.cframe;
     if (!cframe) return false;

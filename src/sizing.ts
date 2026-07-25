@@ -32,6 +32,29 @@ export class FontSizing {
     return Math.max(this.minFontSize, Math.min(this.maxFontSize, optimal));
   }
 
+  calculateFontSizeFromMeasuredSize(
+    measuredWidth: number,
+    measuredHeight: number,
+    measuredFontSize: number,
+    containerWidth: number,
+    containerHeight: number,
+  ): number {
+    if (measuredWidth <= 0 || measuredHeight <= 0 || measuredFontSize <= 0) {
+      return this.minFontSize;
+    }
+
+    const availableWidth = containerWidth - this.padding;
+    const availableHeight = containerHeight - this.padding;
+    if (availableWidth <= 0 || availableHeight <= 0) {
+      return this.minFontSize;
+    }
+
+    const widthScale = availableWidth / measuredWidth;
+    const heightScale = availableHeight / measuredHeight;
+    const optimal = measuredFontSize * Math.min(widthScale, heightScale);
+    return Math.max(this.minFontSize, Math.min(this.maxFontSize, optimal));
+  }
+
   charWidth(fontSize: number): number {
     return fontSize * this.charWidthRatio;
   }
