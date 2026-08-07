@@ -96,12 +96,7 @@ function stylePixels(value: string, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function layoutCanvas(
-  canvas: HTMLCanvasElement,
-  cols: number,
-  rows: number,
-  config: RenderConfig,
-): [CanvasRenderingContext2D, CanvasLayout] {
+function layoutCanvas(canvas: HTMLCanvasElement, cols: number, rows: number, config: RenderConfig): [CanvasRenderingContext2D, CanvasLayout] {
   const dpr = currentDevicePixelRatio();
   const ctx = get2dContext(canvas);
   ctx.font = config.fontString();
@@ -141,26 +136,14 @@ function splitTextLines(text: string): string[] {
 }
 
 export function currentRenderKey(config: RenderConfig): string {
-  return JSON.stringify({
-    fontSize: config.fontSize,
-    charWidthRatio: config.sizing.charWidthRatio,
-    lineHeightRatio: config.sizing.lineHeightRatio,
-    fontFamily: config.fontFamily,
-    textStrokeWidth: config.textStrokeWidth,
-    backgroundColor: config.backgroundColor,
-    dpr: currentDevicePixelRatio(),
-  });
+  return JSON.stringify({fontSize: config.fontSize, charWidthRatio: config.sizing.charWidthRatio, lineHeightRatio: config.sizing.lineHeightRatio, fontFamily: config.fontFamily, textStrokeWidth: config.textStrokeWidth, backgroundColor: config.backgroundColor, dpr: currentDevicePixelRatio()});
 }
 
 export function renderCframe(cframe: CFrameData, config: RenderConfig): RenderResult {
   return renderCframeWithMetrics(cframe, config.charWidth(), config.lineHeight());
 }
 
-export function renderCframeWithMetrics(
-  cframe: CFrameData,
-  charWidth: number,
-  lineHeight: number,
-): RenderResult {
+export function renderCframeWithMetrics(cframe: CFrameData, charWidth: number, lineHeight: number): RenderResult {
   const width = cframe.width * charWidth;
   const height = cframe.height * lineHeight;
   const backgroundBatches = buildBackgroundBatches(cframe, charWidth, lineHeight);
@@ -168,11 +151,7 @@ export function renderCframeWithMetrics(
   return {width, height, backgroundBatches, batches};
 }
 
-function buildBackgroundBatches(
-  cframe: CFrameData,
-  charWidth: number,
-  lineHeight: number,
-): CellRectBatch[] {
+function buildBackgroundBatches(cframe: CFrameData, charWidth: number, lineHeight: number): CellRectBatch[] {
   const {bgRgb, width, height} = cframe;
   if (!bgRgb || bgRgb.length !== width * height * 3) return [];
 
@@ -189,34 +168,20 @@ function buildBackgroundBatches(
 
       while (col < width) {
         const nextRgbIdx = (row * width + col) * 3;
-        if (
-          bgRgb[nextRgbIdx] === r
-          && bgRgb[nextRgbIdx + 1] === g
-          && bgRgb[nextRgbIdx + 2] === b
-        ) {
+        if (bgRgb[nextRgbIdx] === r && bgRgb[nextRgbIdx + 1] === g && bgRgb[nextRgbIdx + 2] === b) {
           col++;
         } else {
           break;
         }
       }
 
-      batches.push({
-        x: startCol * charWidth,
-        y: row * lineHeight,
-        width: (col - startCol) * charWidth,
-        height: lineHeight,
-        color: [r, g, b],
-      });
+      batches.push({x: startCol * charWidth, y: row * lineHeight, width: (col - startCol) * charWidth, height: lineHeight, color: [r, g, b]});
     }
   }
   return batches;
 }
 
-function buildTextBatches(
-  cframe: CFrameData,
-  charWidth: number,
-  lineHeight: number,
-): TextBatch[] {
+function buildTextBatches(cframe: CFrameData, charWidth: number, lineHeight: number): TextBatch[] {
   const batches: TextBatch[] = [];
   const {width, height} = cframe;
 
@@ -250,12 +215,7 @@ function buildTextBatches(
         }
       }
 
-      batches.push({
-        text: batchText,
-        x: startCol * charWidth,
-        y: row * lineHeight,
-        color: [r, g, b],
-      });
+      batches.push({text: batchText, x: startCol * charWidth, y: row * lineHeight, color: [r, g, b]});
     }
   }
   return batches;
@@ -298,12 +258,7 @@ export function renderToOffscreenCanvas(cframe: CFrameData, config: RenderConfig
   return canvas;
 }
 
-function drawCachedCanvasSized(
-  target: HTMLCanvasElement,
-  cached: HTMLCanvasElement,
-  logicalWidth: number,
-  logicalHeight: number,
-): void {
+function drawCachedCanvasSized(target: HTMLCanvasElement, cached: HTMLCanvasElement, logicalWidth: number, logicalHeight: number): void {
   if (target.width !== cached.width) target.width = cached.width;
   if (target.height !== cached.height) target.height = cached.height;
   applyLogicalSize(target, logicalWidth, logicalHeight);
@@ -315,12 +270,7 @@ function drawCachedCanvasSized(
 }
 
 export function drawCachedCanvas(target: HTMLCanvasElement, cached: HTMLCanvasElement): void {
-  drawCachedCanvasSized(
-    target,
-    cached,
-    stylePixels(cached.style.width, cached.width),
-    stylePixels(cached.style.height, cached.height),
-  );
+  drawCachedCanvasSized(target, cached, stylePixels(cached.style.width, cached.width), stylePixels(cached.style.height, cached.height));
 }
 
 export function drawFrameFromCache(target: HTMLCanvasElement, cache: FrameCanvasCache, frameIndex: number): boolean {
@@ -390,11 +340,7 @@ export class FrameCanvasCache {
 
   store(frameIndex: number, canvas: HTMLCanvasElement): void {
     if (frameIndex < 0 || frameIndex >= this.entries.length) return;
-    this.entries[frameIndex] = {
-      canvas,
-      logicalWidth: stylePixels(canvas.style.width, canvas.width),
-      logicalHeight: stylePixels(canvas.style.height, canvas.height),
-    };
+    this.entries[frameIndex] = {canvas, logicalWidth: stylePixels(canvas.style.width, canvas.width), logicalHeight: stylePixels(canvas.style.height, canvas.height)};
   }
 
   get(frameIndex: number): HTMLCanvasElement | null {

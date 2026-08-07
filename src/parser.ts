@@ -36,10 +36,7 @@ const PACKED_HEADER_SIZE = 12;
 export const CFRAME_EXT_FLAG_HAS_BG = 0b0000_0001;
 
 function readU32LE(data: Uint8Array, offset: number): number {
-  return data[offset]
-    + data[offset + 1] * 0x100
-    + data[offset + 2] * 0x10000
-    + data[offset + 3] * 0x1000000;
+  return data[offset] + data[offset + 1] * 0x100 + data[offset + 2] * 0x10000 + data[offset + 3] * 0x1000000;
 }
 
 function writeU32LE(target: Uint8Array, offset: number, value: number): void {
@@ -88,13 +85,7 @@ export function parseCframe(data: Uint8Array): CFrameData {
       return CFrameData.withBackground(width, height, chars, rgb, data.slice(start, start + backgroundSize));
     }
     if (trailing === backgroundSize) {
-      return CFrameData.withBackground(
-        width,
-        height,
-        chars,
-        rgb,
-        data.slice(extensionOffset, extensionOffset + backgroundSize),
-      );
+      return CFrameData.withBackground(width, height, chars, rgb, data.slice(extensionOffset, extensionOffset + backgroundSize));
     }
   }
 
@@ -227,10 +218,7 @@ export function parsePackedCframes(data: Uint8Array): PackedCFrameBlob {
         throw ParseError.invalidExtensionFlags(frame, flags);
       }
       const backgroundOffset = inputOffset + frameSize + 1;
-      backgrounds.set(
-        payload.subarray(backgroundOffset, backgroundOffset + backgroundSize),
-        frame * backgroundSize,
-      );
+      backgrounds.set(payload.subarray(backgroundOffset, backgroundOffset + backgroundSize), frame * backgroundSize);
     }
     return PackedCFrameBlob.withBackground(frameCount, width, height, frames, backgrounds);
   }
@@ -241,18 +229,10 @@ export function parsePackedCframes(data: Uint8Array): PackedCFrameBlob {
     for (let frame = 0; frame < frameCount; frame++) {
       const inputOffset = frame * legacyBackgroundStride;
       frames.set(payload.subarray(inputOffset, inputOffset + frameSize), frame * frameSize);
-      backgrounds.set(
-        payload.subarray(inputOffset + frameSize, inputOffset + frameSize + backgroundSize),
-        frame * backgroundSize,
-      );
+      backgrounds.set(payload.subarray(inputOffset + frameSize, inputOffset + frameSize + backgroundSize), frame * backgroundSize);
     }
     return PackedCFrameBlob.withBackground(frameCount, width, height, frames, backgrounds);
   }
 
-  return new PackedCFrameBlob(
-    frameCount,
-    width,
-    height,
-    data.slice(PACKED_HEADER_SIZE, expectedSize),
-  );
+  return new PackedCFrameBlob(frameCount, width, height, data.slice(PACKED_HEADER_SIZE, expectedSize));
 }

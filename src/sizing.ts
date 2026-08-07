@@ -32,13 +32,7 @@ export class FontSizing {
     return Math.max(this.minFontSize, Math.min(this.maxFontSize, optimal));
   }
 
-  calculateFontSizeFromMeasuredSize(
-    measuredWidth: number,
-    measuredHeight: number,
-    measuredFontSize: number,
-    containerWidth: number,
-    containerHeight: number,
-  ): number {
+  calculateFontSizeFromMeasuredSize(measuredWidth: number, measuredHeight: number, measuredFontSize: number, containerWidth: number, containerHeight: number): number {
     if (measuredWidth <= 0 || measuredHeight <= 0 || measuredFontSize <= 0) {
       return this.minFontSize;
     }

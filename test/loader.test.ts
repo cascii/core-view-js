@@ -74,10 +74,7 @@ describe('loadTextFrames', () => {
   it('loads text concurrently in ordered batches', async () => {
     let active = 0;
     let maxActive = 0;
-    const files = Array.from(
-      {length: 10},
-      (_, index) => new FrameFile(`frame_${index}.txt`, `frame_${index}.txt`, index),
-    );
+    const files = Array.from({length: 10}, (_, index) => new FrameFile(`frame_${index}.txt`, `frame_${index}.txt`, index));
     const provider: FrameDataProvider = {
       async getFrameFiles() {
         return files;

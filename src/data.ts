@@ -1,11 +1,7 @@
 export type RGB = [number, number, number];
 
 export class FrameFile {
-  constructor(
-    public readonly path: string,
-    public readonly name: string,
-    public readonly index: number,
-  ) {}
+  constructor(public readonly path: string, public readonly name: string, public readonly index: number) {}
 
   static extractIndex(stem: string, fallback: number): number {
     const prefixed = stem.match(/^frame_(\d+)$/);
@@ -16,21 +12,9 @@ export class FrameFile {
 }
 
 export class CFrameData {
-  constructor(
-    public readonly width: number,
-    public readonly height: number,
-    public readonly chars: Uint8Array,
-    public readonly rgb: Uint8Array,
-    public readonly bgRgb: Uint8Array | null = null,
-  ) {}
+  constructor(public readonly width: number, public readonly height: number, public readonly chars: Uint8Array, public readonly rgb: Uint8Array, public readonly bgRgb: Uint8Array | null = null) {}
 
-  static withBackground(
-    width: number,
-    height: number,
-    chars: Uint8Array,
-    rgb: Uint8Array,
-    bgRgb: Uint8Array,
-  ): CFrameData {
+  static withBackground(width: number, height: number, chars: Uint8Array, rgb: Uint8Array, bgRgb: Uint8Array): CFrameData {
     return new CFrameData(width, height, chars, rgb, bgRgb);
   }
 
@@ -102,31 +86,14 @@ export class CFrameData {
   }
 
   private isInBounds(row: number, col: number): boolean {
-    return Number.isInteger(row)
-      && Number.isInteger(col)
-      && row >= 0
-      && col >= 0
-      && row < this.height
-      && col < this.width;
+    return Number.isInteger(row) && Number.isInteger(col) && row >= 0 && col >= 0 && row < this.height && col < this.width;
   }
 }
 
 export class PackedCFrameBlob {
-  constructor(
-    public readonly frameCount: number,
-    public readonly width: number,
-    public readonly height: number,
-    public readonly frames: Uint8Array,
-    public readonly bgFrames: Uint8Array | null = null,
-  ) {}
+  constructor(public readonly frameCount: number, public readonly width: number, public readonly height: number, public readonly frames: Uint8Array, public readonly bgFrames: Uint8Array | null = null) {}
 
-  static withBackground(
-    frameCount: number,
-    width: number,
-    height: number,
-    frames: Uint8Array,
-    bgFrames: Uint8Array,
-  ): PackedCFrameBlob {
+  static withBackground(frameCount: number, width: number, height: number, frames: Uint8Array, bgFrames: Uint8Array): PackedCFrameBlob {
     return new PackedCFrameBlob(frameCount, width, height, frames, bgFrames);
   }
 
@@ -147,8 +114,7 @@ export class PackedCFrameBlob {
   }
 
   hasBackground(): boolean {
-    return this.bgFrames !== null
-      && this.bgFrames.length === this.len() * this.backgroundFrameByteLen();
+    return this.bgFrames !== null && this.bgFrames.length === this.len() * this.backgroundFrameByteLen();
   }
 
   frameBytes(index: number): Uint8Array | null {
@@ -162,9 +128,7 @@ export class PackedCFrameBlob {
   }
 
   backgroundFrameBytes(index: number): Uint8Array | null {
-    if (!this.bgFrames || !Number.isInteger(index) || index < 0 || index >= this.frameCount) {
-      return null;
-    }
+    if (!this.bgFrames || !Number.isInteger(index) || index < 0 || index >= this.frameCount) return null;
 
     const frameLen = this.backgroundFrameByteLen();
     const start = index * frameLen;
@@ -192,17 +156,12 @@ export class PackedCFrameBlob {
     }
 
     const bgRgb = this.backgroundFrameBytes(index);
-    return bgRgb
-      ? CFrameData.withBackground(this.width, this.height, chars, rgb, bgRgb.slice())
-      : new CFrameData(this.width, this.height, chars, rgb);
+    return bgRgb ? CFrameData.withBackground(this.width, this.height, chars, rgb, bgRgb.slice()) : new CFrameData(this.width, this.height, chars, rgb);
   }
 }
 
 export class Frame {
-  constructor(
-    public readonly content: string,
-    public cframe: CFrameData | null = null,
-  ) {}
+  constructor(public readonly content: string, public cframe: CFrameData | null = null) {}
 
   static textOnly(content: string): Frame {
     return new Frame(content, null);

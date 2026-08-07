@@ -61,12 +61,7 @@ describe('parseCframe', () => {
   });
 
   it('encodes foreground and background frames losslessly', () => {
-    const frame = CFrameData.withBackground(
-      2, 1,
-      new Uint8Array([0x41, 0x42]),
-      new Uint8Array([255, 0, 0, 0, 255, 0]),
-      new Uint8Array([10, 20, 30, 40, 50, 60]),
-    );
+    const frame = CFrameData.withBackground(2, 1, new Uint8Array([0x41, 0x42]), new Uint8Array([255, 0, 0, 0, 255, 0]), new Uint8Array([10, 20, 30, 40, 50, 60]));
     const bytes = encodeCframe(frame);
     const [legacy, extension] = splitCframeExtension(bytes);
     expect(legacy.length).toBe(16);
@@ -79,11 +74,7 @@ describe('parseCframe', () => {
   });
 
   it('validates frame buffers before encoding', () => {
-    const invalid = new CFrameData(
-      2, 1,
-      new Uint8Array([0x41]),
-      new Uint8Array([255, 0, 0]),
-    );
+    const invalid = new CFrameData(2, 1, new Uint8Array([0x41]), new Uint8Array([255, 0, 0]));
     expect(() => encodeCframe(invalid)).toThrow(ParseError);
   });
 });
