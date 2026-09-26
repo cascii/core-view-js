@@ -18,11 +18,7 @@ describe('FrameFile.extractIndex', () => {
 });
 
 describe('CFrameData', () => {
-  const cframe = new CFrameData(
-    2, 2,
-    new Uint8Array([0x41, 0x42, 0x43, 0x44]),
-    new Uint8Array([255, 0, 0, 0, 255, 0, 0, 0, 255, 128, 128, 128]),
-  );
+  const cframe = new CFrameData(2, 2, new Uint8Array([0x41, 0x42, 0x43, 0x44]), new Uint8Array([255, 0, 0, 0, 255, 0, 0, 0, 255, 128, 128, 128]));
 
   it('charAt returns correct values', () => {
     expect(cframe.charAt(0, 0)).toBe(0x41);
@@ -37,11 +33,7 @@ describe('CFrameData', () => {
   });
 
   it('handles short color buffers safely', () => {
-    const short = new CFrameData(
-      2, 1,
-      new Uint8Array([0x41, 0x42]),
-      new Uint8Array([255, 255, 255]),
-    );
+    const short = new CFrameData(2, 1, new Uint8Array([0x41, 0x42]), new Uint8Array([255, 255, 255]));
     expect(short.rgbAt(0, 1)).toBeNull();
     expect(short.hasVisibleForeground(0, 0)).toBe(true);
     expect(short.hasVisibleForeground(0, 1)).toBe(false);
@@ -49,12 +41,7 @@ describe('CFrameData', () => {
   });
 
   it('preserves visible per-cell backgrounds, including black', () => {
-    const background = CFrameData.withBackground(
-      2, 1,
-      new Uint8Array([0x20, 0x58]),
-      new Uint8Array([0, 0, 0, 255, 255, 255]),
-      new Uint8Array([0, 0, 0, 0, 0, 255]),
-    );
+    const background = CFrameData.withBackground(2, 1, new Uint8Array([0x20, 0x58]), new Uint8Array([0, 0, 0, 255, 255, 255]), new Uint8Array([0, 0, 0, 0, 0, 255]));
     expect(background.hasBackground()).toBe(true);
     expect(background.bgRgbAt(0, 1)).toEqual([0, 0, 255]);
     expect(background.hasVisibleBackground(0, 0)).toBe(true);
@@ -71,17 +58,13 @@ describe('CFrameData', () => {
 });
 
 describe('PackedCFrameBlob', () => {
-  const blob = new PackedCFrameBlob(
-    2,
-    2,
-    1,
-    new Uint8Array([
-      0x41, 255, 0, 0,
-      0x42, 0, 255, 0,
-      0x43, 0, 0, 255,
-      0x44, 255, 255, 255,
-    ]),
-  );
+  const frameBytes = new Uint8Array([
+    0x41, 255, 0, 0,
+    0x42, 0, 255, 0,
+    0x43, 0, 0, 255,
+    0x44, 255, 255, 255,
+  ]);
+  const blob = new PackedCFrameBlob(2, 2, 1, frameBytes);
 
   it('reports frame metadata', () => {
     expect(blob.len()).toBe(2);
@@ -98,13 +81,7 @@ describe('PackedCFrameBlob', () => {
   });
 
   it('decodes packed per-frame backgrounds', () => {
-    const backgroundBlob = PackedCFrameBlob.withBackground(
-      2,
-      1,
-      1,
-      new Uint8Array([0x41, 255, 0, 0, 0x42, 0, 255, 0]),
-      new Uint8Array([10, 20, 30, 40, 50, 60]),
-    );
+    const backgroundBlob = PackedCFrameBlob.withBackground(2, 1, 1, new Uint8Array([0x41, 255, 0, 0, 0x42, 0, 255, 0]), new Uint8Array([10, 20, 30, 40, 50, 60]));
     expect(backgroundBlob.hasBackground()).toBe(true);
     expect(Array.from(backgroundBlob.backgroundFrameBytes(1) ?? [])).toEqual([40, 50, 60]);
     expect(backgroundBlob.decodeFrame(0)?.bgRgbAt(0, 0)).toEqual([10, 20, 30]);

@@ -1,29 +1,13 @@
 export type {RGB} from './data';
 export {FrameFile, CFrameData, PackedCFrameBlob, Frame} from './data';
-export {
-  ParseError,
-  CFRAME_EXT_FLAG_HAS_BG,
-  encodeCframe,
-  parseCframe,
-  parseCframeText,
-  parsePackedCframes,
-  splitCframeExtension,
-} from './parser';
+export {ParseError, CFRAME_EXT_FLAG_HAS_BG, encodeCframe, parseCframe, parseCframeText, parsePackedCframes, splitCframeExtension} from './parser';
 export {AnimationController, AnimationState, LoopMode} from './animation';
 export {parseColor, FrameColors} from './color';
 export {FontSizing, charPosition} from './sizing';
-export {
-  RenderConfig, renderCframe, renderCframeWithMetrics,
-  textBatchColorString, cellRectBatchColorString,
-  renderToCanvas, renderToOffscreenCanvas, drawCachedCanvas,
-  drawFrameFromCache, renderTextToCanvas, FrameCanvasCache,
-} from './render';
+export {RenderConfig, renderCframe, renderCframeWithMetrics, textBatchColorString, cellRectBatchColorString, renderToCanvas, renderToOffscreenCanvas, drawCachedCanvas, drawFrameFromCache, renderTextToCanvas, FrameCanvasCache} from './render';
 export type {TextBatch, CellRectBatch, RenderResult} from './render';
 export {parseDetailsToml, detailsFrameColors} from './details';
 export type {ProjectDetails} from './details';
-export {
-  LoadingPhase, LoadingProgress, FrameLoaderState,
-  loadTextFrames, loadColorFrames, yieldToEventLoop,
-} from './loader';
+export {LoadingPhase, LoadingProgress, FrameLoaderState, loadTextFrames, loadColorFrames, yieldToEventLoop} from './loader';
 export type {FrameDataProvider} from './loader';
 export {FramePlayer, loadFramesFromUrls} from './player';

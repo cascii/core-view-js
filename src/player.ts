@@ -2,10 +2,7 @@ import {AnimationController} from './animation';
 import {CFrameData, Frame, FrameFile} from './data';
 import {ParseError, parsePackedCframes} from './parser';
 import {FontSizing} from './sizing';
-import {
-  RenderConfig, FrameCanvasCache, renderToOffscreenCanvas,
-  currentRenderKey, drawCachedCanvas, drawFrameFromCache, renderTextToCanvas,
-} from './render';
+import {RenderConfig, FrameCanvasCache, renderToOffscreenCanvas, currentRenderKey, drawCachedCanvas, drawFrameFromCache, renderTextToCanvas} from './render';
 import {FrameDataProvider, loadTextFrames, loadColorFrames, yieldToEventLoop} from './loader';
 
 export async function loadFramesFromUrls(urls: string[]): Promise<Frame[]> {
@@ -245,14 +242,12 @@ export class FramePlayer {
 
   async loadColors(provider: FrameDataProvider): Promise<void> {
     const frameFiles = [...this._frameFiles];
-    await loadColorFrames(
-      provider,
-      frameFiles,
-      (index, _total, cframe) => {
-        if (cframe) this.setFrameColor(index, cframe);
-      },
-      yieldToEventLoop,
-    );
+    const onFrame = (index: number, _total: number, cframe: CFrameData | null): void => {
+      if (cframe) {
+        this.setFrameColor(index, cframe);
+      }
+    };
+    await loadColorFrames(provider, frameFiles, onFrame, yieldToEventLoop);
   }
 
   async preCacheAll(): Promise<void> {

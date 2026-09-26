@@ -157,12 +157,7 @@ export async function loadTextFrames(provider: FrameDataProvider, directory: str
   return [frames, frameFiles];
 }
 
-export async function loadColorFrames(
-  provider: FrameDataProvider,
-  frameFiles: FrameFile[],
-  onFrame: (index: number, total: number, cframe: CFrameData | null) => void,
-  yieldFn: () => Promise<void>,
-): Promise<void> {
+export async function loadColorFrames(provider: FrameDataProvider, frameFiles: FrameFile[], onFrame: (index: number, total: number, cframe: CFrameData | null) => void, yieldFn: () => Promise<void>): Promise<void> {
   const total = frameFiles.length;
   for (let i = 0; i < total; i++) {
     const bytes = await provider.readCframeBytes(frameFiles[i].path);
