@@ -327,6 +327,12 @@ export class FrameCanvasCache {
     this.renderKey = '';
   }
 
+  invalidate(frameIndex: number): boolean {
+    if (!this.has(frameIndex)) return false;
+    this.entries[frameIndex] = null;
+    return true;
+  }
+
   invalidateForRenderKey(renderKey: string): boolean {
     if (this.renderKey === renderKey) return false;
     this.renderKey = renderKey;

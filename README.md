@@ -71,7 +71,7 @@ setInterval(() => {
 - **`renderCframeWithMetrics(cframe, charWidth, lineHeight)`** — Generate commands using host-measured glyph metrics
 - **`renderToCanvas` / `renderToOffscreenCanvas`** — Draw foreground colors, cell backgrounds, and optional text strokes to HTML canvas
 - **`renderTextToCanvas`** — Draw plain text frames to canvas
-- **`FrameCanvasCache`** — Cache pre-rendered canvases with full render-configuration invalidation
+- **`FrameCanvasCache`** — Cache pre-rendered canvases with full render-configuration invalidation and per-frame `invalidate(index)`
 
 `RenderConfig.textStrokeWidth` enables stroked/bolder glyph rendering. `RenderConfig.backgroundColor`
 sets the whole-canvas background; it is composited before any per-cell backgrounds stored in the frame.
@@ -96,6 +96,8 @@ between frames so browser input and animation remain responsive.
   - `loadFromUrls(urls)` — Load directly from URL list
   - `fitToContainer(width, height)` — Auto-size font to fit container
   - `tickAndRender(canvas)` — Combined tick + canvas render
+  - `setFrameColor(index, cframe)` — Replace one frame's color data and drop its cached canvas; returns `false` for invalid indices. It does not set `colorReady`
+  - `invalidateFrame(index)` — Drop one frame's cached canvas after mutating its `CFrameData` buffers in place
   - `preCacheAll()` — Pre-render all colored frames to offscreen canvases
   - `refreshRenderKey()` — Refresh cached DPR/config state after direct config changes or monitor moves
 

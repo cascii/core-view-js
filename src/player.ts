@@ -59,10 +59,24 @@ export class FramePlayer {
     return this._frameFiles;
   }
 
-  setFrameColor(index: number, cframe: CFrameData): void {
-    if (index < this.frames.length) {
-      this.frames[index].cframe = cframe;
-    }
+  // Returns false and changes nothing for negative, fractional, or out-of-range indices.
+  // Does not change colorReady; the caller decides when colored rendering starts.
+  setFrameColor(index: number, cframe: CFrameData): boolean {
+    if (!this.isFrameIndex(index)) return false;
+    this.frames[index].cframe = cframe;
+    this.cache.invalidate(index);
+    return true;
+  }
+
+  // Call after mutating a frame's buffers in place so its cached canvas is redrawn.
+  invalidateFrame(index: number): boolean {
+    if (!this.isFrameIndex(index)) return false;
+    this.cache.invalidate(index);
+    return true;
+  }
+
+  private isFrameIndex(index: number): boolean {
+    return Number.isInteger(index) && index >= 0 && index < this.frames.length;
   }
 
   loadPackedColors(data: Uint8Array): void {

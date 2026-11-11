@@ -11,3 +11,5 @@ export type {ProjectDetails} from './details';
 export {LoadingPhase, LoadingProgress, FrameLoaderState, loadTextFrames, loadColorFrames, yieldToEventLoop} from './loader';
 export type {FrameDataProvider} from './loader';
 export {FramePlayer, loadFramesFromUrls} from './player';
+export {AdaptiveFramePlayer, BinaryMultiSizeSource, HttpByteSource, MemoryByteSource, TiledMultiSizeSource, resolutionProgress, validateMultiSizeManifest} from './multisize';
+export type {AdaptivePlayerOptions, ByteSource, CanvasViewport, FrameSize, FrameTile, GlyphMetrics, MultiSizeFrameSource, MultiSizeManifest, PlayerSnapshot, ResolutionCurve, ResolutionDirection, ResolutionTransition, SizeVariant, TiledAnimationManifest} from './multisize';
