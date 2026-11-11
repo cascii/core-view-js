@@ -1,6 +1,6 @@
 {
   "name": "@cascii/core-view",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Core frame display and animation library for ASCII art viewers",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -17,10 +17,10 @@
     "dist"
   ],
   "scripts": {
-    "prepare": "tsup",
-    "build": "tsup",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "prepare": "node ./node_modules/tsup/dist/cli-default.js",
+    "build": "node ./node_modules/tsup/dist/cli-default.js",
+    "test": "node ./node_modules/vitest/vitest.mjs run",
+    "test:watch": "node ./node_modules/vitest/vitest.mjs"
   },
   "keywords": [
     "ascii",
